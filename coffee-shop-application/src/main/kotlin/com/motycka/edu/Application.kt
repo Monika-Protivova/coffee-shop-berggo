@@ -5,9 +5,14 @@ import com.motycka.edu.config.configureDatabases
 import com.motycka.edu.config.configureJWT
 import com.motycka.edu.customer.CustomerRepositoryImpl
 import com.motycka.edu.customer.InternalCustomerService
+import com.motycka.edu.menu.InternalMenuService
 import com.motycka.edu.menu.MenuRepositoryImpl
 import com.motycka.edu.menu.MenuService
 import com.motycka.edu.menu.menuRoutes
+import com.motycka.edu.order.OrderItemRepositoryImpl
+import com.motycka.edu.order.OrderRepositoryImpl
+import com.motycka.edu.order.OrderServiceImpl
+import com.motycka.edu.order.orderRoutes
 import com.motycka.edu.security.AuthenticationService
 import com.motycka.edu.security.JwtService
 import com.motycka.edu.security.loginRoutes
@@ -39,15 +44,30 @@ fun main() {
         logger.info { "Starting application with configuration" }
 
         // Configure the database
-        configureDatabases()
+        val database = configureDatabases()
 
+        // Repositories
         val menuRepository = MenuRepositoryImpl()
+        val customerRepository = CustomerRepositoryImpl()
+        val orderItemRepository = OrderItemRepositoryImpl(database)
+        val orderRepository = OrderRepositoryImpl(database, orderItemRepository)
+
+        // Services
         val menuService = MenuService(menuRepository = menuRepository)
+        val internalMenuService = InternalMenuService(menuRepository = menuRepository)
+        val internalCustomerService = InternalCustomerService(customerRepository = customerRepository)
+        val orderService = OrderServiceImpl(
+            orderRepository = orderRepository,
+            menuService = internalMenuService,
+            customerRepository = customerRepository
+        )
+
+        // Authentication
         val jwtGenerator = JwtService(config = applicationConfig)
         val userRepository = UserRepositoryImpl()
         val authenticationService = AuthenticationService(
             userRepository = userRepository,
-            internalCustomerService = InternalCustomerService(customerRepository = CustomerRepositoryImpl()),
+            internalCustomerService = internalCustomerService,
             jwtService = jwtGenerator
         )
 
@@ -67,7 +87,7 @@ fun main() {
 
             authenticate(AUTH_JWT) {
                 menuRoutes(menuService, API_PATH)
-                // add order routes
+                orderRoutes(orderService, API_PATH)
             }
         }
     }.start(wait = true)

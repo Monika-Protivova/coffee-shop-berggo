@@ -4,11 +4,10 @@ interface OrderRepository {
 
     fun selectAll(): List<OrderDTO>
 
-    fun selectById(id: OrderId): OrderDTO?
+    fun selectById(id: Long): OrderDTO?
 
     fun create(order: OrderDTO): OrderDTO
 
     fun update(order: OrderDTO): OrderDTO
 
 }
-

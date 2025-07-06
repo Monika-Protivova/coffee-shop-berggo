@@ -15,4 +15,12 @@ class InternalMenuService(
             ids = ids
         )
     }
+
+    suspend fun getMenuItemsByIds(ids: List<MenuItemId>): List<MenuItemDTO> {
+        logger.debug { "Getting menu items with ids: $ids" }
+        return menuRepository.selectMenuItems(
+            filter = null,
+            ids = ids.toSet()
+        ).toList()
+    }
 }
