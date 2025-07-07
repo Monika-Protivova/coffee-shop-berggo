@@ -4,6 +4,8 @@ import com.motycka.edu.customer.CustomerDAO
 import com.motycka.edu.customer.CustomerTable
 import com.motycka.edu.menu.MenuItemDAO
 import com.motycka.edu.menu.MenuItemTable
+import com.motycka.edu.order.OrderItemTable
+import com.motycka.edu.order.OrderTable
 import com.motycka.edu.user.UserDAO
 import com.motycka.edu.user.UserRole
 import com.motycka.edu.user.UserTable
@@ -15,18 +17,20 @@ import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 
-fun Application.configureDatabases() {
-    Database.connect(
+fun Application.configureDatabases(): Database {
+    val database = Database.connect(
         url = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
         driver = "org.h2.Driver",
         user = "root",
         password = ""
     )
 
-    transaction {
+    transaction(database) {
         SchemaUtils.create(UserTable)
         SchemaUtils.create(MenuItemTable)
         SchemaUtils.create(CustomerTable)
+        SchemaUtils.create(OrderTable)
+        SchemaUtils.create(OrderItemTable)
 
         UserDAO.new {
             username = "admin"
@@ -96,6 +100,8 @@ fun Application.configureDatabases() {
             isDeleted = false
         }
     }
+
+    return database
 }
 
 suspend fun <T> suspendTransaction(block: Transaction.() -> T): T =
